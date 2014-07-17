@@ -465,13 +465,20 @@ QString ctkAppLauncherInternal::expandValue(const QString& value)
 }
 
 // --------------------------------------------------------------------------
-QString ctkAppLauncherInternal::pathSep()
+QString ctkAppLauncherInternal::pathSep(bool posix)
 {
+  if (posix)
+    {
+    return QLatin1String(":");
+    }
+  else
+    {
 #if defined(Q_OS_WIN32)
-  return QLatin1String(";");
+    return QLatin1String(";");
 #else
-  return QLatin1String(":");
+    return QLatin1String(":");
 #endif
+    }
 }
 
 // --------------------------------------------------------------------------
@@ -844,7 +851,7 @@ void ctkAppLauncher::generateEnvironmentScript(QTextStream &output, bool posix)
     const QString pair = QString("%1=%2").arg(key, env.value(key));
     if (appendVars.contains(key))
       {
-      const QString trailing = appendFormat.arg(key, this->Internal->pathSep());
+      const QString trailing = appendFormat.arg(key, this->Internal->pathSep(posix));
       output << exportFormat.arg(this->Internal->shellQuote(posix, pair, trailing)) << '\n';
       }
     else

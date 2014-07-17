@@ -84,7 +84,14 @@ public:
   QString expandValue(const QString& value);
 
   /// \brief Return path separator
-  QString pathSep();
+  ///
+  /// If \a posix parameter is False (default), the path separator that should
+  /// be used with the running operating system is used.
+  /// For windows, it returns ";", for unix system it returns ":".
+  ///
+  /// If \a posix parameter is True, the path separator ":" used with posix
+  /// system is returned.
+  QString pathSep(bool posix = false);
 
   QString invalidSettingsMessage()const;
   bool verbose()const;
