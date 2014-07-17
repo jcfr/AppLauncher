@@ -83,6 +83,9 @@ public:
   /// </ul>
   QString expandValue(const QString& value);
 
+  /// \brief Return path separator
+  QString pathSep();
+
   QString invalidSettingsMessage()const;
   bool verbose()const;
   QString splashImagePath()const;
@@ -148,7 +151,6 @@ public:
   QCoreApplication*               Application;
   bool                            Initialized;
   bool                            DetachApplicationToLaunch;
-  QString                         PathSep;
   QString                         LibraryPathVariableName;
   QSharedPointer<QSplashScreen>   SplashScreen;
   QScopedPointer<QPixmap>         SplashPixmap;

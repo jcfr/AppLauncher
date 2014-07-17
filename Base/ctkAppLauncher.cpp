@@ -42,10 +42,8 @@ ctkAppLauncherInternal::ctkAppLauncherInternal()
   this->SystemEnvironment = QProcessEnvironment::systemEnvironment();
 
 #if defined(Q_OS_WIN32)
-  this->PathSep = ";";
   this->LibraryPathVariableName = "PATH";
 #else
-  this->PathSep = ":";
 # if defined(Q_OS_MAC)
   this->LibraryPathVariableName = "DYLD_LIBRARY_PATH";
 # elif defined(Q_OS_LINUX)
@@ -340,7 +338,7 @@ bool ctkAppLauncherInternal::disableSplash() const
 // --------------------------------------------------------------------------
 QString ctkAppLauncherInternal::searchPaths(const QString& executableName, const QStringList& extensions)
 {
-  QStringList paths = this->SystemEnvironment.value("PATH").split(this->PathSep);
+  QStringList paths = this->SystemEnvironment.value("PATH").split(this->pathSep());
   paths = this->ListOfPaths + paths;
   foreach(const QString& path, paths)
     {
@@ -393,7 +391,7 @@ bool ctkAppLauncherInternal::extractLauncherNameAndDir(const QString& applicatio
   // In case a symlink to the launcher is available from the PATH, resolve its location.
   if (!fileInfo.exists())
     {
-    QStringList paths = this->SystemEnvironment.value("PATH").split(this->PathSep);
+    QStringList paths = this->SystemEnvironment.value("PATH").split(this->pathSep());
     foreach(const QString& path, paths)
       {
       QString executablePath = QDir(path).filePath(fileInfo.fileName());
@@ -441,7 +439,7 @@ QString ctkAppLauncherInternal::expandValue(const QString& value)
   QHash<QString, QString> keyValueMap;
   keyValueMap["<APPLAUNCHER_DIR>"] = this->LauncherDir;
   keyValueMap["<APPLAUNCHER_NAME>"] = this->LauncherName;
-  keyValueMap["<PATHSEP>"] = this->PathSep;
+  keyValueMap["<PATHSEP>"] = this->pathSep();
 
   QString updatedValue = value;
   foreach(const QString& key, keyValueMap.keys())
@@ -464,6 +462,16 @@ QString ctkAppLauncherInternal::expandValue(const QString& value)
     updatedValue.replace(QString("<env:%1>").arg(envVarName), envVarValue, Qt::CaseInsensitive);
     }
   return updatedValue;
+}
+
+// --------------------------------------------------------------------------
+QString ctkAppLauncherInternal::pathSep()
+{
+#if defined(Q_OS_WIN32)
+  return QLatin1String(";");
+#else
+  return QLatin1String(":");
+#endif
 }
 
 // --------------------------------------------------------------------------
@@ -609,7 +617,7 @@ bool ctkAppLauncherInternal::readSettings(const QString& fileName, int settingsT
           {
           paths.append(this->MapOfEnvVars[envVarName]);
           }
-        this->MapOfEnvVars.insert(envVarName, paths.join(this->PathSep));
+        this->MapOfEnvVars.insert(envVarName, paths.join(this->pathSep()));
         }
       }
     }
@@ -649,10 +657,10 @@ void ctkAppLauncherInternal::buildEnvironment(QProcessEnvironment &env)
 
   // Add library path and PATH to map
 #ifdef Q_OS_WIN32
-  newVars["PATH"] = (this->ListOfPaths + this->ListOfLibraryPaths).join(this->PathSep);
+  newVars["PATH"] = (this->ListOfPaths + this->ListOfLibraryPaths).join(this->pathSep());
 #else
-  newVars[this->LibraryPathVariableName] = this->ListOfLibraryPaths.join(this->PathSep);
-  newVars["PATH"] = this->ListOfPaths.join(this->PathSep);
+  newVars[this->LibraryPathVariableName] = this->ListOfLibraryPaths.join(this->pathSep());
+  newVars["PATH"] = this->ListOfPaths.join(this->pathSep());
 #endif
 
   // Set environment variables
@@ -661,7 +669,7 @@ void ctkAppLauncherInternal::buildEnvironment(QProcessEnvironment &env)
     QString value = this->expandValue(newVars[key]);
     if (appendVars.contains(key) && env.contains(key))
       {
-      value = QString("%1%2%3").arg(value, this->PathSep, env.value(key));
+      value = QString("%1%2%3").arg(value, this->pathSep(), env.value(key));
       }
     this->reportInfo(QString("Setting env. variable [%1]:%2").arg(key, value));
     env.insert(key, value);
@@ -836,7 +844,7 @@ void ctkAppLauncher::generateEnvironmentScript(QTextStream &output, bool posix)
     const QString pair = QString("%1=%2").arg(key, env.value(key));
     if (appendVars.contains(key))
       {
-      const QString trailing = appendFormat.arg(key, this->Internal->PathSep);
+      const QString trailing = appendFormat.arg(key, this->Internal->pathSep());
       output << exportFormat.arg(this->Internal->shellQuote(posix, pair, trailing)) << '\n';
       }
     else
